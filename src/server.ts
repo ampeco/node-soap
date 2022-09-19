@@ -509,7 +509,7 @@ export class Server extends EventEmitter {
             return header;
           }
         }).join('\n');
-      }
+      };
     }
 
     try {
