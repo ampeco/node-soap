@@ -479,19 +479,22 @@ export class Server extends EventEmitter {
     const style = options.style;
 
     if (this.soapHeaders) {
-      headers = this.soapHeaders.map((header) => {
-        if (typeof header === 'function') {
-          return header(methodName, args, options.headers, req);
-        } else {
-          return header;
-        }
-      }).join('\n');
+
+      headers = () => {
+        return this.soapHeaders.map((header) => {
+          if (typeof header === 'function') {
+            return header(methodName, args, options.headers, req);
+          } else {
+            return header;
+          }
+        }).join('\n');
+      }
     }
 
     try {
       method = this.services[serviceName][portName][methodName];
     } catch (error) {
-      return callback(this._envelope('', headers, includeTimestamp));
+      return callback(this._envelope('', headers(), includeTimestamp));
     }
 
     let handled = false;
@@ -522,7 +525,7 @@ export class Server extends EventEmitter {
         const element = this.wsdl.definitions.services[serviceName].ports[portName].binding.methods[methodName].output;
         body = this.wsdl.objectToDocumentXML(outputName, result, element.targetNSAlias, element.targetNamespace);
       }
-      callback(this._envelope(body, headers, includeTimestamp));
+      callback(this._envelope(body, headers(), includeTimestamp));
     };
 
     if (!this.wsdl.definitions.services[serviceName].ports[portName].binding.methods[methodName].output) {
@@ -530,7 +533,7 @@ export class Server extends EventEmitter {
       handled = true;
       body = '';
       if (this.onewayOptions.emptyBody) {
-        body = this._envelope('', headers, includeTimestamp);
+        body = this._envelope('', headers(), includeTimestamp);
       }
       callback(body, this.onewayOptions.responseCode);
     }
